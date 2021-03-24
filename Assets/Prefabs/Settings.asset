@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b92ed9b6dc884224a9774b179c124c1, type: 3}
+  m_Name: Settings
+  m_EditorClassIdentifier: 
+  maxSpeed: 1.6
+  acceleration: 3
+  collisionAvoidSteerStrength: 5
+  targetSteerStrength: 3
+  randomSteerStrength: 0.6
+  randomSteerMaxDuration: 1
+  dstBetweenMarkers: 0.7
+  pheremoneEvaporateTime: 45
+  timeBetweenDirUpdate: 0.15
+  collisionRadius: 0.15
+  antennaDst: 0.25
+  homingForce: 0
+  lifetime: 150
+  useHomeMarkers: 1
+  useFoodMarkers: 1
+  useDeath: 0
+  pheremoneRunOutTime: 30
+  pheremoneWeight: 1
+  perceptionRad: 2.5
+  sensorSize: 0.75
+  sensorDst: 1.25
+  sensorSpacing: 1
