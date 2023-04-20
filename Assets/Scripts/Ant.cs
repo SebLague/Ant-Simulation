@@ -29,15 +29,14 @@ public class Ant : MonoBehaviour
 
 	Transform collectedFood;
 
-	Vector2 lastPheremonePos;
+	Vector2 lastPheromonePos;
 	Collider2D[] foodColliders;
-	PerceptionMap.Entry[] pheremoneEntries;
+	PerceptionMap.Entry[] pheromoneEntries;
 	AntColony colony;
 	float nextDirUpdateTime;
 
 	Vector2 randomSteerForce;
 	Vector2 pheromoneSteerForce;
-	Vector2 homingSteerForce;
 
 	// State
 	Vector2 currentForwardDir;
@@ -67,7 +66,7 @@ public class Ant : MonoBehaviour
 
 	void Start()
 	{
-		lastPheremonePos = transform.position;
+		lastPheromonePos = transform.position;
 		currentState = State.SearchingForFood;
 		transform.eulerAngles = Vector3.forward * Random.value * 360;
 		currentForwardDir = transform.right;
@@ -77,8 +76,8 @@ public class Ant : MonoBehaviour
 		foodColliders = new Collider2D[1];
 		homePos = transform.position;
 
-		const int maxPerceivedPheremones = 1024;
-		pheremoneEntries = new PerceptionMap.Entry[maxPerceivedPheremones];
+		const int maxPerceivedPheromones = 1024;
+		pheromoneEntries = new PerceptionMap.Entry[maxPerceivedPheromones];
 		nextDirUpdateTime = Random.value * settings.timeBetweenDirUpdate;
 		colDst = settings.collisionRadius / 2f;
 		deathTime = Time.time + settings.lifetime + Random.Range(0, settings.lifetime / 2f);
@@ -87,17 +86,13 @@ public class Ant : MonoBehaviour
 
 	void Update()
 	{
-
 		if (Time.time > deathTime && settings.useDeath)
 		{
 			Destroy(gameObject);
 		}
 
 		HandlePheromonePlacement();
-
 		HandleRandomSteering();
-
-		homingSteerForce = Vector2.zero;
 
 		if (currentState == State.SearchingForFood)
 		{
@@ -109,14 +104,14 @@ public class Ant : MonoBehaviour
 		}
 
 		HandleCollisionSteering();
-
 		HandleMovement();
 	}
 
 
 	void HandleMovement()
 	{
-		Vector2 steerForce = randomSteerForce + pheromoneSteerForce + obstacleAvoidForce + homingSteerForce;
+		Vector2 steerForce = randomSteerForce + pheromoneSteerForce + obstacleAvoidForce;
+
 		if (turningAround)
 		{
 			steerForce += turnAroundForce * settings.targetSteerStrength;
@@ -125,6 +120,7 @@ public class Ant : MonoBehaviour
 				turningAround = false;
 			}
 		}
+
 		Vector2 desiredVelocity = steerForce.normalized * settings.maxSpeed;
 		SteerTowards(desiredVelocity);
 
@@ -189,7 +185,7 @@ public class Ant : MonoBehaviour
 	void HandleReturnHome()
 	{
 		Vector2 currentPos = transform.position;
-		Collider2D home = Physics2D.OverlapCircle(perceptionCentre.position, settings.perceptionRad, homeMask);
+		Collider2D home = Physics2D.OverlapCircle(perceptionCentre.position, settings.perceptionRadius, homeMask);
 		if (home)
 		{
 			pheromoneSteerForce = ((Vector2)home.transform.position - currentPos).normalized * settings.targetSteerStrength;
@@ -207,8 +203,7 @@ public class Ant : MonoBehaviour
 		}
 		else
 		{
-			HandlePheromoneSteeringNew();
-			homingSteerForce = (homePos - currentPos).normalized * settings.homingForce;
+			HandlePheromoneSteering();
 		}
 
 	}
@@ -240,7 +235,7 @@ public class Ant : MonoBehaviour
 
 		if (targetFood == null)
 		{
-			int numFoodInRadius = Physics2D.OverlapCircleNonAlloc(perceptionCentre.position, settings.perceptionRad, foodColliders, foodMask);
+			int numFoodInRadius = Physics2D.OverlapCircleNonAlloc(perceptionCentre.position, settings.perceptionRadius, foodColliders, foodMask);
 			if (numFoodInRadius > 0)
 			{
 				targetFood = foodColliders[Random.Range(0, numFoodInRadius)].transform;
@@ -270,48 +265,38 @@ public class Ant : MonoBehaviour
 		}
 		else
 		{
-			HandlePheromoneSteeringNew();
-			//	HandlePheremoneSteering();
+			HandlePheromoneSteering();
 		}
 
 	}
 
 	void HandlePheromonePlacement()
 	{
-		if (Vector2.Distance(transform.position, lastPheremonePos) > settings.dstBetweenMarkers)
+		if (Vector2.Distance(transform.position, lastPheromonePos) > settings.dstBetweenMarkers)
 		{
-			//Pheremone pheremonePrefab = null;
-			//var dir = (lastPheremonePos - (Vector2) transform.position).normalized;
-			if (currentState == State.SearchingForFood && settings.useHomeMarkers && (Time.time - leftHomeTime) < settings.pheremoneRunOutTime)
+			if (currentState == State.SearchingForFood && settings.useHomeMarkers && (Time.time - leftHomeTime) < settings.pheromoneRunOutTime)
 			{
-
-				float t = 1 - (Time.time - leftHomeTime) / settings.pheremoneRunOutTime;
+				float t = 1 - (Time.time - leftHomeTime) / settings.pheromoneRunOutTime;
 				t = Mathf.Lerp(0.5f, 1, t);
 				colony.homeMarkers.Add(transform.position, t);
-				lastPheremonePos = transform.position + (Vector3)Random.insideUnitCircle * settings.dstBetweenMarkers * 0.2f;
-
+				lastPheromonePos = transform.position + (Vector3)Random.insideUnitCircle * settings.dstBetweenMarkers * 0.2f;
 			}
-			else if (currentState == State.ReturningHome && settings.useFoodMarkers && (Time.time - leftFoodTime) < settings.pheremoneRunOutTime)
+			else if (currentState == State.ReturningHome && settings.useFoodMarkers && (Time.time - leftFoodTime) < settings.pheromoneRunOutTime)
 			{
-				float t = 1 - (Time.time - leftFoodTime) / settings.pheremoneRunOutTime;
+				float t = 1 - (Time.time - leftFoodTime) / settings.pheromoneRunOutTime;
 				t = Mathf.Lerp(0.5f, 1, t);
 				colony.foodMarkers.Add(transform.position, t);
-				lastPheremonePos = transform.position + (Vector3)Random.insideUnitCircle * settings.dstBetweenMarkers * 0.2f;
+				lastPheromonePos = transform.position + (Vector3)Random.insideUnitCircle * settings.dstBetweenMarkers * 0.2f;
 			}
-
 		}
-
 	}
 
-
-
-	void HandlePheromoneSteeringNew()
+	void HandlePheromoneSteering()
 	{
 		if (Time.time > nextDirUpdateTime)
 		{
 			Vector2 leftSensorDir = (currentForwardDir + (Vector2)transform.up * settings.sensorDst).normalized;
 			Vector2 rightSensorDir = (currentForwardDir - (Vector2)transform.up * settings.sensorDst).normalized;
-
 
 			pheromoneSteerForce = Vector2.zero;
 			float currentTime = Time.time;
@@ -329,18 +314,18 @@ public class Ant : MonoBehaviour
 			for (int i = 0; i < 3; i++)
 			{
 				sensorData[i] = 0;
-				int numPheremones = 0;
+				int numPheromones = 0;
 				if (currentState == State.SearchingForFood && settings.useFoodMarkers)
 				{
-					numPheremones = colony.foodMarkers.GetAllInCircle(pheremoneEntries, sensors[i]);
+					numPheromones = colony.foodMarkers.GetAllInCircle(pheromoneEntries, sensors[i]);
 				}
 				if (currentState == State.ReturningHome && settings.useHomeMarkers)
 				{
-					numPheremones = colony.homeMarkers.GetAllInCircle(pheremoneEntries, sensors[i]);
+					numPheromones = colony.homeMarkers.GetAllInCircle(pheromoneEntries, sensors[i]);
 				}
-				for (int j = 0; j < numPheremones; j++)
+				for (int j = 0; j < numPheromones; j++)
 				{
-					float evaporateT = ((currentTime - pheremoneEntries[i].creationTime) / settings.pheremoneEvaporateTime);
+					float evaporateT = ((currentTime - pheromoneEntries[j].creationTime) / settings.pheromoneEvaporateTime);
 					float strength = Mathf.Clamp01(1 - evaporateT);
 					//strength = strength * strength;
 					sensorData[i] += strength;
@@ -351,25 +336,17 @@ public class Ant : MonoBehaviour
 			float left = sensorData[leftIndex];
 			float right = sensorData[rightIndex];
 
-			//centre =1;
-			//left = 0;
-			//right =0;
-
 			if (centre > left && centre > right)
 			{
-				// continue same dir
-				pheromoneSteerForce = currentForwardDir * settings.pheremoneWeight;
+				pheromoneSteerForce = currentForwardDir * settings.pheromoneWeight;
 			}
-
 			else if (left > right)
 			{
-				//pheromoneSteerForce = leftSensorDir * settings.pheremoneWeight * rand * Mathf.Max(1, left / t);
-				pheromoneSteerForce = leftSensorDir * settings.pheremoneWeight;
+				pheromoneSteerForce = leftSensorDir * settings.pheromoneWeight;
 			}
 			else if (right > left)
 			{
-				//pheromoneSteerForce = rightSensorDir * settings.pheremoneWeight * rand * Mathf.Max(1, right / t);
-				pheromoneSteerForce = rightSensorDir * settings.pheremoneWeight;
+				pheromoneSteerForce = rightSensorDir * settings.pheromoneWeight;
 			}
 
 		}

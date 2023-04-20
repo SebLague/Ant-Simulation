@@ -24,7 +24,7 @@ public class PerceptionMap : MonoBehaviour {
 	}
 
 	void Update () {
-		particleEmitParams.startLifetime = antSettings.pheremoneEvaporateTime;
+		particleEmitParams.startLifetime = antSettings.pheromoneEvaporateTime;
 	}
 
 	void Init () {
@@ -42,7 +42,7 @@ public class PerceptionMap : MonoBehaviour {
 			}
 		}
 
-		particleEmitParams.startLifetime = antSettings.pheremoneEvaporateTime;
+		particleEmitParams.startLifetime = antSettings.pheromoneEvaporateTime;
 		particleEmitParams.startSize = pheremoneSize;
 		var m = particleDisplay.main;
 		m.maxParticles = 100 * 1000;
@@ -83,7 +83,7 @@ public class PerceptionMap : MonoBehaviour {
 						Entry currentEntry = currentEntryNode.Value;
 						float currentLifetime = currentTime - currentEntry.creationTime;
 						// Remove expired entries
-						if (currentLifetime > antSettings.pheremoneEvaporateTime) {
+						if (currentLifetime > antSettings.pheromoneEvaporateTime) {
 							cell.entries.Remove (currentEntryNode);
 						}
 						// Check if entry is inside perception radius
